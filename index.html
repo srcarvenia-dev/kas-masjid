@@ -3,108 +3,145 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kas Masjid</title>
+<title>Kas Masjid Digital</title>
 
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0d6efd">
+<meta name="theme-color" content="#0f5132">
+<link rel="manifest" id="pwa-manifest">
 
 <style>
-body{font-family:Arial;background:#f4f6f9;margin:0;padding:15px;}
-.container{max-width:900px;margin:auto;}
-h1{text-align:center;}
-.card{background:#fff;padding:15px;border-radius:10px;margin-bottom:15px;
-box-shadow:0 2px 6px rgba(0,0,0,0.05);}
-.summary{display:flex;flex-wrap:wrap;gap:10px;}
-.box{flex:1;min-width:150px;padding:15px;border-radius:8px;color:white;text-align:center;}
-.masuk{background:#198754;}
-.keluar{background:#dc3545;}
-.saldo{background:#0d6efd;}
-select{padding:8px;border-radius:6px;}
-.table-wrapper{overflow-x:auto;}
-table{width:100%;border-collapse:collapse;min-width:600px;}
-th,td{border:1px solid #ddd;padding:8px;text-align:center;font-size:14px;}
-th{background:#0d6efd;color:white;}
+body{font-family:Arial, sans-serif;background:#f4f6f9;margin:0;padding:15px}
+h1{text-align:center;color:#0f5132}
+.card{background:#fff;padding:15px;border-radius:12px;margin-bottom:15px;box-shadow:0 4px 10px rgba(0,0,0,0.05)}
+.summary{display:flex;gap:10px;flex-wrap:wrap}
+.box{flex:1;padding:10px;border-radius:8px;color:#fff;text-align:center}
+.masuk{background:#198754}
+.keluar{background:#dc3545}
+.saldo{background:#0f5132}
+select{width:100%;padding:8px;border-radius:8px;margin-top:8px}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
+th,td{border:1px solid #ddd;padding:6px;text-align:center}
+th{background:#0f5132;color:#fff}
+#installBtn{display:none;position:fixed;bottom:20px;right:20px;background:#0f5132;color:#fff;border:none;padding:12px 18px;border-radius:30px}
 </style>
 </head>
 <body>
 
-<div class="container">
-<h1>Laporan Kas Masjid</h1>
+<h1>Kas Masjid</h1>
 
 <div class="card">
-<select id="filterBulan" onchange="tampilkanData()">
-<option value="all">Semua Bulan</option>
-</select>
+<label>Filter Bulan</label>
+<input type="month" id="filterBulan" onchange="loadData()">
 </div>
 
 <div class="card summary">
-<div class="box masuk"><h3>Penerimaan</h3><p id="totalMasuk">Rp 0</p></div>
-<div class="box keluar"><h3>Pengeluaran</h3><p id="totalKeluar">Rp 0</p></div>
-<div class="box saldo"><h3>Saldo</h3><p id="saldoAkhir">Rp 0</p></div>
+<div class="box masuk">
+<h3>Total Masuk</h3>
+<p id="totalMasuk">Rp 0</p>
+</div>
+<div class="box keluar">
+<h3>Total Keluar</h3>
+<p id="totalKeluar">Rp 0</p>
+</div>
+<div class="box saldo">
+<h3>Saldo</h3>
+<p id="saldoAkhir">Rp 0</p>
+</div>
 </div>
 
-<div class="card table-wrapper">
+<div class="card">
 <table>
 <thead>
 <tr>
 <th>Tanggal</th>
 <th>Uraian</th>
-<th>Penerimaan</th>
-<th>Pengeluaran</th>
+<th>Masuk</th>
+<th>Keluar</th>
 </tr>
 </thead>
 <tbody id="tabelData"></tbody>
 </table>
 </div>
-</div>
+
+<button id="installBtn" onclick="installApp()">Install App</button>
 
 <script>
-const url="https://script.google.com/macros/s/AKfycbx5su45hlPg1ION0A3Qal97yNnSfW9LQdRBpDQiXCoZdWi4BOQb_KFjcM7piPI8yYFy1Q/exec";
-let semuaData=[];
+// =======================
+// 🔗 GANTI URL DI SINI
+// =======================
+const SHEET_URL = "PASTE_URL_GOOGLE_SCRIPT_DISINI";
 
-function rupiah(a){return "Rp "+Number(a).toLocaleString("id-ID");}
-function tgl(t){return new Date(t).toLocaleDateString("id-ID");}
+// FORMAT RUPIAH
+function rupiah(n){return "Rp "+Number(n).toLocaleString("id-ID")}
 
-function isiFilter(){
- let s=new Set();
- semuaData.slice(1).forEach(r=>{
-   let d=new Date(r[0]);
-   let b=d.getFullYear()+"-"+(d.getMonth()+1).toString().padStart(2,"0");
-   s.add(b);
- });
- let f=document.getElementById("filterBulan");
- s.forEach(b=>{f.innerHTML+=`<option value="${b}">${b}</option>`});
+// LOAD DATA
+function loadData(){
+fetch(SHEET_URL)
+.then(res=>res.json())
+.then(data=>{
+let bulan = document.getElementById("filterBulan").value;
+let totalMasuk=0,totalKeluar=0,html="";
+
+data.slice(1).forEach(r=>{
+let tgl = new Date(r[0]);
+let uraian = r[1];
+let masuk = Number(r[2])||0;
+let keluar = Number(r[3])||0;
+
+let bulanData = tgl.toISOString().slice(0,7);
+
+if(!bulan || bulan===bulanData){
+totalMasuk+=masuk;
+totalKeluar+=keluar;
+
+html+=`<tr>
+<td>${tgl.toLocaleDateString("id-ID")}</td>
+<td>${uraian}</td>
+<td>${rupiah(masuk)}</td>
+<td>${rupiah(keluar)}</td>
+</tr>`;
+}
+});
+
+document.getElementById("tabelData").innerHTML=html;
+document.getElementById("totalMasuk").innerText=rupiah(totalMasuk);
+document.getElementById("totalKeluar").innerText=rupiah(totalKeluar);
+document.getElementById("saldoAkhir").innerText=rupiah(totalMasuk-totalKeluar);
+});
 }
 
-function tampilkanData(){
- let f=document.getElementById("filterBulan").value;
- let masuk=0,keluar=0,html="";
- semuaData.slice(1).forEach(r=>{
-   let d=new Date(r[0]);
-   let b=d.getFullYear()+"-"+(d.getMonth()+1).toString().padStart(2,"0");
-   if(f!=="all"&&b!==f)return;
-   let m=Number(r[2])||0;
-   let k=Number(r[3])||0;
-   masuk+=m;keluar+=k;
-   html+=`<tr>
-   <td>${tgl(r[0])}</td>
-   <td>${r[1]}</td>
-   <td>${m?rupiah(m):"-"}</td>
-   <td>${k?rupiah(k):"-"}</td>
-   </tr>`;
- });
- document.getElementById("tabelData").innerHTML=html;
- document.getElementById("totalMasuk").innerText=rupiah(masuk);
- document.getElementById("totalKeluar").innerText=rupiah(keluar);
- document.getElementById("saldoAkhir").innerText=rupiah(masuk-keluar);
+loadData();
+
+// =======================
+// 🔥 PWA INSTALL SYSTEM
+// =======================
+const manifest={
+"name":"Kas Masjid Digital",
+"short_name":"KasMasjid",
+"start_url":"./",
+"display":"standalone",
+"background_color":"#ffffff",
+"theme_color":"#0f5132",
+"icons":[{"src":"https://cdn-icons-png.flaticon.com/512/616/616408.png","sizes":"192x192","type":"image/png"}]
+};
+const manifestURL=URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:'application/json'}));
+document.getElementById("pwa-manifest").setAttribute("href",manifestURL);
+
+const swCode=`self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('fetch',e=>{});`;
+const swURL=URL.createObjectURL(new Blob([swCode],{type:'application/javascript'}));
+if('serviceWorker'in navigator){navigator.serviceWorker.register(swURL)}
+
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt',e=>{
+e.preventDefault();
+deferredPrompt=e;
+document.getElementById("installBtn").style.display="block";
+});
+
+function installApp(){
+if(deferredPrompt){
+deferredPrompt.prompt();
+deferredPrompt.userChoice.then(()=>{deferredPrompt=null;});
 }
-
-fetch(url)
-.then(r=>r.json())
-.then(d=>{semuaData=d;isiFilter();tampilkanData();});
-
-if("serviceWorker"in navigator){
- navigator.serviceWorker.register("sw.js");
 }
 </script>
 
