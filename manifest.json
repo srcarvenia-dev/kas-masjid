@@ -1,20 +1,15 @@
 {
-  "name": "Kas Masjid",
+  "name": "Kas Masjid Digital",
   "short_name": "KasMasjid",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "theme_color": "#0d6efd",
   "background_color": "#ffffff",
+  "theme_color": "#0f5132",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/616/616408.png",
       "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
       "type": "image/png"
     }
   ]
