@@ -1,10 +1,5 @@
-self.addEventListener("install",e=>{
- e.waitUntil(
-   caches.open("kas-masjid").then(c=>c.add("index.html"))
- );
+self.addEventListener("install", function () {
+  self.skipWaiting();
 });
-self.addEventListener("fetch",e=>{
- e.respondWith(
-   caches.match(e.request).then(r=>r||fetch(e.request))
- );
-});
+
+self.addEventListener("fetch", function () {});
