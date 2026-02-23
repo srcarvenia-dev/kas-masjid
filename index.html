@@ -1,157 +1,209 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f5132">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kas Masjid Digital</title>
-
-<meta name="theme-color" content="#0f5132">
-<link rel="manifest" id="pwa-manifest">
+<title>Laporan Kas Masjid</title>
 
 <style>
-body{font-family:Arial, sans-serif;background:#f4f6f9;margin:0;padding:15px}
-h1{text-align:center;color:#0f5132}
-.card{background:#fff;padding:15px;border-radius:12px;margin-bottom:15px;box-shadow:0 4px 10px rgba(0,0,0,0.05)}
-.summary{display:flex;gap:10px;flex-wrap:wrap}
-.box{flex:1;padding:10px;border-radius:8px;color:#fff;text-align:center}
-.masuk{background:#198754}
-.keluar{background:#dc3545}
-.saldo{background:#0f5132}
-select{width:100%;padding:8px;border-radius:8px;margin-top:8px}
-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
-th,td{border:1px solid #ddd;padding:6px;text-align:center}
-th{background:#0f5132;color:#fff}
-#installBtn{display:none;position:fixed;bottom:20px;right:20px;background:#0f5132;color:#fff;border:none;padding:12px 18px;border-radius:30px}
+body{
+  font-family: Arial, sans-serif;
+  background:#f4f6f9;
+  margin:0;
+  padding:15px;
+}
+.container{
+  max-width:900px;
+  margin:auto;
+}
+h1{
+  text-align:center;
+  margin-bottom:20px;
+}
+.card{
+  background:#fff;
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:15px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.05);
+}
+.summary{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.box{
+  flex:1;
+  min-width:150px;
+  padding:15px;
+  border-radius:8px;
+  color:white;
+  text-align:center;
+}
+.masuk{ background:#198754;}
+.keluar{ background:#dc3545;}
+.saldo{ background:#0d6efd;}
+
+select{
+  padding:8px;
+  border-radius:6px;
+  border:1px solid #ccc;
+  width:200px;
+}
+
+.table-wrapper{
+  overflow-x:auto;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:600px;
+}
+th,td{
+  border:1px solid #ddd;
+  padding:8px;
+  text-align:center;
+  font-size:14px;
+}
+th{
+  background:#0d6efd;
+  color:white;
+}
+.footer{
+  text-align:center;
+  margin-top:15px;
+  font-size:13px;
+  color:#666;
+}
+@media(max-width:600px){
+  th,td{font-size:12px;}
+  select{width:100%;}
+}
 </style>
 </head>
-  <script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js");
-}
-</script>
 <body>
 
-<h1>Kas Masjid</h1>
+<div class="container">
+
+<h1>Laporan Kas Masjid</h1>
 
 <div class="card">
-<label>Filter Bulan</label>
-<input type="month" id="filterBulan" onchange="loadData()">
+<label><strong>Filter Bulan:</strong></label><br><br>
+<select id="filterBulan" onchange="tampilkanData()">
+  <option value="all">Semua</option>
+</select>
 </div>
 
 <div class="card summary">
-<div class="box masuk">
-<h3>Total Masuk</h3>
-<p id="totalMasuk">Rp 0</p>
-</div>
-<div class="box keluar">
-<h3>Total Keluar</h3>
-<p id="totalKeluar">Rp 0</p>
-</div>
-<div class="box saldo">
-<h3>Saldo</h3>
-<p id="saldoAkhir">Rp 0</p>
-</div>
+  <div class="box masuk">
+    <h3>Total Penerimaan</h3>
+    <p id="totalMasuk">Rp 0</p>
+  </div>
+  <div class="box keluar">
+    <h3>Total Pengeluaran</h3>
+    <p id="totalKeluar">Rp 0</p>
+  </div>
+  <div class="box saldo">
+    <h3>Saldo Akhir</h3>
+    <p id="saldoAkhir">Rp 0</p>
+  </div>
 </div>
 
 <div class="card">
+<div class="table-wrapper">
 <table>
 <thead>
 <tr>
 <th>Tanggal</th>
 <th>Uraian</th>
-<th>Masuk</th>
-<th>Keluar</th>
+<th>Penerimaan</th>
+<th>Pengeluaran</th>
 </tr>
 </thead>
 <tbody id="tabelData"></tbody>
 </table>
 </div>
+</div>
 
-<button id="installBtn" onclick="installApp()">Install App</button>
+<div class="footer">
+Sistem Laporan Kas Masjid - Terhubung Google Sheet
+</div>
+
+</div>
 
 <script>
-// =======================
-// 🔗 GANTI URL DI SINI
-// =======================
-const SHEET_URL = "PASTE_URL_GOOGLE_SCRIPT_DISINI";
+const url = "https://script.google.com/macros/s/AKfycbx5su45hlPg1ION0A3Qal97yNnSfW9LQdRBpDQiXCoZdWi4BOQb_KFjcM7piPI8yYFy1Q/exec";
 
-// FORMAT RUPIAH
-function rupiah(n){return "Rp "+Number(n).toLocaleString("id-ID")}
+let semuaData = [];
 
-// LOAD DATA
-function loadData(){
-fetch(SHEET_URL)
+function formatRupiah(angka){
+  return "Rp " + Number(angka).toLocaleString("id-ID");
+}
+
+function formatTanggal(tgl){
+  let date = new Date(tgl);
+  return date.toLocaleDateString("id-ID");
+}
+
+function isiFilter(){
+  let bulanSet = new Set();
+
+  semuaData.slice(1).forEach(row=>{
+    let date = new Date(row[0]);
+    let bulan = date.getFullYear()+"-"+(date.getMonth()+1).toString().padStart(2,"0");
+    bulanSet.add(bulan);
+  });
+
+  let select = document.getElementById("filterBulan");
+  bulanSet.forEach(b=>{
+    select.innerHTML += `<option value="${b}">${b}</option>`;
+  });
+}
+
+function tampilkanData(){
+  let filter = document.getElementById("filterBulan").value;
+
+  let totalMasuk = 0;
+  let totalKeluar = 0;
+  let html = "";
+
+  semuaData.slice(1).forEach(row=>{
+    let date = new Date(row[0]);
+    let bulan = date.getFullYear()+"-"+(date.getMonth()+1).toString().padStart(2,"0");
+
+    if(filter !== "all" && bulan !== filter) return;
+
+    let tanggal = formatTanggal(row[0]);
+    let uraian = row[1];
+    let masuk = Number(row[2]) || 0;
+    let keluar = Number(row[3]) || 0;
+
+    totalMasuk += masuk;
+    totalKeluar += keluar;
+
+    html += `
+    <tr>
+      <td>${tanggal}</td>
+      <td>${uraian}</td>
+      <td>${masuk ? formatRupiah(masuk) : "-"}</td>
+      <td>${keluar ? formatRupiah(keluar) : "-"}</td>
+    </tr>`;
+  });
+
+  document.getElementById("tabelData").innerHTML = html;
+  document.getElementById("totalMasuk").innerText = formatRupiah(totalMasuk);
+  document.getElementById("totalKeluar").innerText = formatRupiah(totalKeluar);
+  document.getElementById("saldoAkhir").innerText = formatRupiah(totalMasuk - totalKeluar);
+}
+
+fetch(url)
 .then(res=>res.json())
 .then(data=>{
-let bulan = document.getElementById("filterBulan").value;
-let totalMasuk=0,totalKeluar=0,html="";
-
-data.slice(1).forEach(r=>{
-let tgl = new Date(r[0]);
-let uraian = r[1];
-let masuk = Number(r[2])||0;
-let keluar = Number(r[3])||0;
-
-let bulanData = tgl.toISOString().slice(0,7);
-
-if(!bulan || bulan===bulanData){
-totalMasuk+=masuk;
-totalKeluar+=keluar;
-
-html+=`<tr>
-<td>${tgl.toLocaleDateString("id-ID")}</td>
-<td>${uraian}</td>
-<td>${rupiah(masuk)}</td>
-<td>${rupiah(keluar)}</td>
-</tr>`;
-}
+  semuaData = data;
+  isiFilter();
+  tampilkanData();
 });
-
-document.getElementById("tabelData").innerHTML=html;
-document.getElementById("totalMasuk").innerText=rupiah(totalMasuk);
-document.getElementById("totalKeluar").innerText=rupiah(totalKeluar);
-document.getElementById("saldoAkhir").innerText=rupiah(totalMasuk-totalKeluar);
-});
-}
-
-loadData();
-
-// =======================
-// 🔥 PWA INSTALL SYSTEM
-// =======================
-const manifest={
-"name":"Kas Masjid Digital",
-"short_name":"KasMasjid",
-"start_url":"./",
-"display":"standalone",
-"background_color":"#ffffff",
-"theme_color":"#0f5132",
-"icons":[{"src":"https://cdn-icons-png.flaticon.com/512/616/616408.png","sizes":"192x192","type":"image/png"}]
-};
-const manifestURL=URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:'application/json'}));
-document.getElementById("pwa-manifest").setAttribute("href",manifestURL);
-
-const swCode=`self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('fetch',e=>{});`;
-const swURL=URL.createObjectURL(new Blob([swCode],{type:'application/javascript'}));
-if('serviceWorker'in navigator){navigator.serviceWorker.register(swURL)}
-
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt',e=>{
-e.preventDefault();
-deferredPrompt=e;
-document.getElementById("installBtn").style.display="block";
-});
-
-function installApp(){
-if(deferredPrompt){
-deferredPrompt.prompt();
-deferredPrompt.userChoice.then(()=>{deferredPrompt=null;});
-}
-}
 </script>
 
 </body>
 </html>
-
